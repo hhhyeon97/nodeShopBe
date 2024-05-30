@@ -18,7 +18,8 @@ const cartSchema = Schema(
 
 cartSchema.methods.toJSON = function () {
   const obj = this._doc;
-  delete obj.updateAt;
+  delete obj.__v;
+  delete obj.updatedAt;
   return obj;
 };
 

@@ -13,9 +13,10 @@ app.use(bodyParser.json()); // req.body가 객체로 인식이 된다.
 
 app.use('/api', indexRouter);
 
-const mongoURI = process.env.LOCAL_DB_ADDRESS;
+const MONGODB_URI_PROD = process.env.MONGODB_URI_PROD;
+// console.log('mongo-uri', MONGODB_URI_PROD);
 mongoose
-  .connect(mongoURI, { useNewUrlParser: true })
+  .connect(MONGODB_URI_PROD, { useNewUrlParser: true })
   .then(() => console.log('mongoose connected !'))
   .catch((err) => console.log('db connection fail', err));
 

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const productSchema = Schema(
   {
-    sku: { type: String, required: TreeWalker, unique: true },
+    sku: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     image: { type: String, required: true },
     category: { type: Array, required: true },

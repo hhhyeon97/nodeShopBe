@@ -1,6 +1,6 @@
 const Product = require('../models/Product');
 
-const PAGE_SIZE = 1;
+const PAGE_SIZE = 5;
 const productController = {};
 productController.createProduct = async (req, res) => {
   try {
@@ -79,11 +79,14 @@ productController.updateProduct = async (req, res) => {
       status,
     } = req.body;
 
-    const product = await (Product.findByIdAndUpdate =
-      ({ _id: productId },
+    const product = await Product.findByIdAndUpdate(
+      productId,
       { sku, name, size, image, price, description, category, stock, status },
-      { new: true }));
+      { new: true },
+    );
+
     if (!product) throw new Error('상품이 존재하지 않습니다 !');
+
     res.status(200).json({ status: 'success', data: product });
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });

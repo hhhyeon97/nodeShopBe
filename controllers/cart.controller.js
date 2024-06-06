@@ -51,9 +51,16 @@ cartController.deleteCartItem = async (req, res) => {
   try {
     const { userId } = req;
     const { id } = req.params;
+    // 카트 찾기
     const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({ status: 'fail', error: 'Cart not found' });
+    }
+    // 아이템 삭제
     cart.items = cart.items.filter((item) => !item._id.equals(id));
+    // 변경 사항 저장
     await cart.save();
+    res.status(200).json({ status: 'success', cartItemQty: cart.items.length });
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });
   }

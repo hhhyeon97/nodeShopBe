@@ -29,7 +29,12 @@ productController.createProduct = async (req, res) => {
     });
 
     await product.save();
-    res.status(200).json({ status: 'success', product });
+
+    // 새로 생성된 상품이 있는 페이지 번호를 계산
+    const totalItemNum = await Product.find({ isDeleted: false }).count();
+    const totalPageNum = Math.ceil(totalItemNum / PAGE_SIZE);
+
+    res.status(200).json({ status: 'success', product, totalPageNum });
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });
   }

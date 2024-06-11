@@ -137,25 +137,19 @@ productController.checkStock = async (item) => {
     };
   }
   // 재고가 충분함을 나타내는 플래그 반환
-  return { isVerify: true, product };
+  return { isVerify: true };
 };
 
 productController.checkItemListStock = async (itemList) => {
   const insufficientStockItems = []; // 재고가 불충분한 아이템을 저장할 배열
-  const verifiedProducts = []; // 재고가 충분한 제품을 저장할 배열
 
   // 재고 확인 로직
-  await Promise.all(
-    itemList.map(async (item) => {
-      const stockCheck = await productController.checkStock(item);
-      if (!stockCheck.isVerify) {
-        insufficientStockItems.push({ item, message: stockCheck.message });
-      } else {
-        verifiedProducts.push({ item, product: stockCheck.product });
-      }
-      return stockCheck;
-    }),
-  );
+  for (const item of itemList) {
+    const stockCheck = await productController.checkStock(item);
+    if (!stockCheck.isVerify) {
+      insufficientStockItems.push({ item, message: stockCheck.message });
+    }
+  }
 
   // 만약 재고가 불충분한 아이템이 있다면, 불충분한 아이템 목록 반환
   if (insufficientStockItems.length > 0) {
@@ -163,14 +157,13 @@ productController.checkItemListStock = async (itemList) => {
   }
 
   // 재고가 충분한 아이템들에 대해 재고 차감
-  await Promise.all(
-    verifiedProducts.map(async ({ item, product }) => {
-      const newStock = { ...product.stock };
-      newStock[item.size] -= item.qty;
-      product.stock = newStock;
-      await product.save();
-    }),
-  );
+  for (const item of itemList) {
+    const product = await Product.findById(item.productId);
+    const newStock = { ...product.stock };
+    newStock[item.size] -= item.qty;
+    product.stock = newStock;
+    await product.save();
+  }
 
   // 모든 아이템의 재고가 충분함을 나타내는 빈 배열 반환
   return [];

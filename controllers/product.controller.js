@@ -126,46 +126,52 @@ productController.getProductById = async (req, res) => {
 };
 
 productController.checkStock = async (item) => {
-  // 내가 사려는 아이템 재고 정보 들고 오기
   const product = await Product.findById(item.productId);
-  // 내가 사려는 아이템 qty, 재고 비교
   if (product.stock[item.size] < item.qty) {
-    // 재고가 불충분하면 불충문 메세지와 함께 데이터 반환
     return {
       isVerify: false,
       message: `${product.name}의 ${item.size} 사이즈 재고가 부족합니다.`,
     };
   }
-  // 재고가 충분함을 나타내는 플래그 반환
-  return { isVerify: true };
+  return { isVerify: true, product }; // product를 반환하여 나중에 재사용할 수 있게 함
 };
 
 productController.checkItemListStock = async (itemList) => {
-  const insufficientStockItems = []; // 재고가 불충분한 아이템을 저장할 배열
+  const insufficientStockItems = [];
 
-  // 재고 확인 로직
-  for (const item of itemList) {
-    const stockCheck = await productController.checkStock(item);
+  // 모든 아이템의 재고를 확인하는 작업을 병렬로 수행
+  const stockChecks = await Promise.all(
+    itemList.map((item) => productController.checkStock(item)),
+  );
+
+  for (const stockCheck of stockChecks) {
     if (!stockCheck.isVerify) {
-      insufficientStockItems.push({ item, message: stockCheck.message });
+      insufficientStockItems.push({
+        item: stockCheck.item,
+        message: stockCheck.message,
+      });
     }
   }
 
-  // 만약 재고가 불충분한 아이템이 있다면, 불충분한 아이템 목록 반환
+  // 재고가 부족한 아이템이 있으면 반환
   if (insufficientStockItems.length > 0) {
     return insufficientStockItems;
   }
 
-  // 재고가 충분한 아이템들에 대해 재고 차감
-  for (const item of itemList) {
-    const product = await Product.findById(item.productId);
-    const newStock = { ...product.stock };
-    newStock[item.size] -= item.qty;
-    product.stock = newStock;
-    await product.save();
-  }
+  // 재고가 충분한 아이템들에 대해 재고 차감을 병렬로 수행
+  await Promise.all(
+    stockChecks.map(async (stockCheck, index) => {
+      if (stockCheck.isVerify) {
+        const item = itemList[index];
+        const product = stockCheck.product;
+        const newStock = { ...product.stock };
+        newStock[item.size] -= item.qty;
+        product.stock = newStock;
+        await product.save();
+      }
+    }),
+  );
 
-  // 모든 아이템의 재고가 충분함을 나타내는 빈 배열 반환
   return [];
 };
 

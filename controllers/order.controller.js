@@ -90,7 +90,16 @@ orderController.getOrderList = async (req, res) => {
     const cond = ordernum
       ? { orderNum: { $regex: ordernum, $options: 'i' } }
       : {};
-    let query = Order.find(cond);
+    let query = Order.find(cond)
+      .populate('userId')
+      .populate({
+        path: 'items',
+        populate: {
+          path: 'productId',
+          model: 'Product',
+          select: 'image name',
+        },
+      });
     let response = { status: 'success' };
     if (page) {
       // 페이지 번호에 따라 적절한 범위의 주문을 가져오기
@@ -109,6 +118,23 @@ orderController.getOrderList = async (req, res) => {
     res.status(200).json(response);
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });
+  }
+};
+
+orderController.updateOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const order = await Order.findByIdAndUpdate(
+      id,
+      { status: status },
+      { new: true },
+    );
+    if (!order) throw new Error('해당 주문을 찾을 수 없습니다.');
+
+    res.status(200).json({ status: 'success', data: order });
+  } catch (error) {
+    return res.status(400).json({ status: 'fail', error: error.message });
   }
 };
 

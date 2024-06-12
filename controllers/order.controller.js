@@ -3,6 +3,7 @@ const Order = require('../models/Order');
 const productController = require('./product.controller');
 // const { randomStringGenerator } = require('../utils/randomStringGenerator');
 const { generateOrderNumber } = require('../utils/randomStringGenerator');
+const PAGE_SIZE = 5;
 
 orderController.createOrder = async (req, res) => {
   try {
@@ -80,6 +81,34 @@ orderController.getOrder = async (req, res) => {
       message: '주문 내역을 가져오는 도중 오류가 발생했습니다.',
       error: error.message,
     });
+  }
+};
+
+orderController.getOrderList = async (req, res) => {
+  try {
+    const { page, ordernum } = req.query;
+    const cond = ordernum
+      ? { orderNum: { $regex: ordernum, $options: 'i' } }
+      : {};
+    let query = Order.find(cond);
+    let response = { status: 'success' };
+    if (page) {
+      // 페이지 번호에 따라 적절한 범위의 주문을 가져오기
+      query.skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE);
+      // 총 주문 수 계산
+      const totalOrderNum = await Order.find(cond).count();
+
+      // 전체 페이지 수 계산
+      const totalPageNum = Math.ceil(totalOrderNum / PAGE_SIZE);
+
+      response.totalPageNum = totalPageNum;
+    }
+    // 쿼리를 실행하여 주문 내역 가져오기
+    const orderList = await query.exec();
+    response.data = orderList;
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ status: 'fail', error: error.message });
   }
 };
 

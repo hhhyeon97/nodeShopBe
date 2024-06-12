@@ -1,7 +1,8 @@
 const orderController = {};
 const Order = require('../models/Order');
 const productController = require('./product.controller');
-const { randomStringGenerator } = require('../utils/randomStringGenerator');
+// const { randomStringGenerator } = require('../utils/randomStringGenerator');
+const { generateOrderNumber } = require('../utils/randomStringGenerator');
 
 orderController.createOrder = async (req, res) => {
   try {
@@ -29,7 +30,7 @@ orderController.createOrder = async (req, res) => {
       shipTo,
       contact,
       items: orderList,
-      orderNum: randomStringGenerator(),
+      orderNum: generateOrderNumber(),
     });
     await newOrder.save();
     // save 후에 카트를 비워주자 !

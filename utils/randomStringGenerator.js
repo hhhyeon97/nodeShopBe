@@ -8,26 +8,18 @@
 
 // module.exports = { randomStringGenerator };
 
-// 주문 번호 형태 바꿔 보기
-let lastOrderNumber = 0;
-let lastOrderDate = '';
-
 const generateOrderNumber = () => {
   const now = new Date();
-  const year = now.getFullYear();
+  const year = now.getFullYear().toString().slice(2); // 연도의 마지막 두 자리
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
   const currentDate = `${year}${month}${day}`;
 
-  if (currentDate === lastOrderDate) {
-    lastOrderNumber += 1;
-  } else {
-    lastOrderDate = currentDate;
-    lastOrderNumber = 1;
-  }
+  const randomString = Array.from(Array(6), () =>
+    Math.floor(Math.random() * 36).toString(36),
+  ).join('');
 
-  const orderNumber = String(lastOrderNumber).padStart(4, '0');
-  return `${currentDate}${orderNumber}`;
+  return `${currentDate}${randomString}`;
 };
 
 module.exports = { generateOrderNumber };

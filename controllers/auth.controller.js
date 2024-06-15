@@ -74,6 +74,17 @@ authController.authenticate = async (req, res, next) => {
   }
 };
 
+// authController.authenticate = (req, res, next) => {
+//   const token = req.header('Authorization').replace('Bearer ', '');
+//   try {
+//     const decoded = jwt.verify(token, JWT_SECRET_KEY);
+//     req.userId = decoded._id;
+//     next();
+//   } catch (error) {
+//     res.status(401).json({ status: 'fail', error: 'Unauthorized' });
+//   }
+// };
+
 authController.checkAdminPermission = async (req, res, next) => {
   try {
     // token으로 찾아낸 userId 값을 authenticate에서 받아옴 !

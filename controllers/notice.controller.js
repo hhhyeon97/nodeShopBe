@@ -6,11 +6,11 @@ noticeController.createNotice = async (req, res) => {
   try {
     const { title, content } = req.body;
     // 필수 필드인 title과 content가 제대로 들어왔는지 확인
-    if (!title || !content) {
-      return res
-        .status(400)
-        .json({ message: '제목과 내용은 필수 입력 사항입니다.' });
-    }
+    // if (!title || !content) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: '제목과 내용은 필수 입력 사항입니다.' });
+    // }
     // 새로운 공지사항 객체 생성
     const newNotice = new Notice({
       title,

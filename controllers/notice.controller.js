@@ -26,4 +26,13 @@ noticeController.createNotice = async (req, res) => {
   }
 };
 
+noticeController.getNotices = async (req, res) => {
+  try {
+    const notices = await Notice.find({});
+    res.status(200).json({ status: 'success', data: notices });
+  } catch (error) {
+    res.status(400).json({ status: 'fail', error: error.message });
+  }
+};
+
 module.exports = noticeController;

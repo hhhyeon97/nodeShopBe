@@ -11,4 +11,7 @@ router.post(
   noticeController.createNotice,
 );
 
+// 공지사항 보여주기
+router.get('/', noticeController.getNotices);
+
 module.exports = router;

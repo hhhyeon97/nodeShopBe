@@ -138,4 +138,51 @@ orderController.updateOrder = async (req, res) => {
   }
 };
 
+orderController.totalSales = async (req, res) => {
+  try {
+    const totalSales = await Order.aggregate([
+      { $match: { status: 'active' } }, // 완료된 상태의 주문만 집계
+      { $group: { _id: null, totalAmount: { $sum: '$totalPrice' } } },
+    ]);
+
+    if (totalSales.length === 0) {
+      return res
+        .status(404)
+        .json({ status: 'fail', error: 'No sales data found' });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: { totalSales: totalSales[0].totalAmount },
+    });
+  } catch (error) {
+    res.status(400).json({ status: 'fail', error: error.message });
+  }
+};
+
+// 날짜별 주문건수 통계 보여주기(그래프라이브러리 에러 폭탄....일단 테이블형태로라도 보여주기)
+
+orderController.getOrdersByDate = async (req, res) => {
+  try {
+    const ordersByDate = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: new Date(new Date() - 30 * 24 * 60 * 60 * 1000) }, // 최근 30일간의 주문만 고려
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } }, // 날짜 순으로 정렬
+    ]);
+
+    res.status(200).json({ status: 'success', data: { ordersByDate } });
+  } catch (error) {
+    res.status(400).json({ status: 'fail', error: error.message });
+  }
+};
+
 module.exports = orderController;

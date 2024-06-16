@@ -204,4 +204,24 @@ productController.checkItemListStock = async (itemList) => {
   return [];
 };
 
+productController.getStatistics = async (req, res) => {
+  try {
+    const totalProducts = await Product.countDocuments({ isDeleted: false });
+    const categoryStats = await Product.aggregate([
+      { $match: { isDeleted: false } },
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        totalProducts,
+        categoryStats,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ status: 'fail', error: error.message });
+  }
+};
+
 module.exports = productController;

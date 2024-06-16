@@ -12,4 +12,7 @@ router.put(
   authController.checkAdminPermission,
   orderController.updateOrder,
 );
+
+router.get('/total', orderController.totalSales);
+router.get('/orders-by-date', orderController.getOrdersByDate);
 module.exports = router;

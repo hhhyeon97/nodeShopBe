@@ -28,4 +28,6 @@ router.delete(
 
 router.get('/:id', productController.getProductById);
 
+router.get('/statistics', productController.getStatistics);
+
 module.exports = router;

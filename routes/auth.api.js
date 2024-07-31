@@ -8,5 +8,6 @@ router.post('/google', authController.loginWithGoogle);
 router.post('/kakao', authController.loginWithKakao);
 // rest api
 router.get('/kakao/callback', authController.kakaoCallback);
+router.get('/naver/callback', authController.naverCallback);
 
 module.exports = router;

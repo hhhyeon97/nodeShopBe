@@ -8,6 +8,8 @@ const axios = require('axios');
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const { KAKAO_REST_API_KEY, KAKAO_REDIRECT_URI } = process.env;
+const { NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_REDIRECT_URI } =
+  process.env;
 
 authController.loginWithEmail = async (req, res) => {
   try {
@@ -160,6 +162,61 @@ authController.kakaoCallback = async (req, res) => {
       error: '카카오 로그인에 실패하였습니다.',
       details: error.message,
     });
+  }
+};
+
+// naver rest api
+
+authController.naverCallback = async (req, res) => {
+  const { code, state } = req.query;
+  try {
+    const tokenResponse = await axios.post(
+      `https://nid.naver.com/oauth2.0/token`,
+      null,
+      {
+        params: {
+          grant_type: 'authorization_code',
+          client_id: NAVER_CLIENT_ID,
+          client_secret: NAVER_CLIENT_SECRET,
+          redirect_uri: NAVER_REDIRECT_URI,
+          code,
+          state,
+        },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      },
+    );
+    const { access_token } = tokenResponse.data;
+    const naverResponse = await axios.get(
+      'https://openapi.naver.com/v1/nid/me',
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      },
+    );
+    const naverProfile = naverResponse.data.response;
+    const { email, nickname } = naverProfile;
+
+    let user = await User.findOne({ email });
+    if (!user) {
+      const randomPassword = '' + Math.floor(Math.random() * 1000000);
+      const salt = await bcrypt.genSalt(10);
+      const newPassword = await bcrypt.hash(randomPassword, salt);
+
+      user = new User({
+        name: nickname,
+        email,
+        password: newPassword,
+      });
+      await user.save();
+    }
+    const localToken = await user.generateToken();
+    res.status(200).json({ status: 'success', user, token: localToken });
+  } catch (error) {
+    res.status(400).json({ status: 'fail', error: error.message });
+    console.log('에러', error.message);
   }
 };
 

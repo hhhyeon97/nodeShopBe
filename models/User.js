@@ -43,7 +43,6 @@ userSchema.methods.generateTokens = async function () {
     expiresIn: '7d', // 긴 유효 기간
   });
 
-  this.accessToken = accessToken;
   this.refreshToken = refreshToken; // 리프레시토큰 저장
   await this.save();
 

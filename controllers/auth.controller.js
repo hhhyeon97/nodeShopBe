@@ -43,15 +43,15 @@ authController.refreshToken = async (req, res) => {
     // Verify the refresh token
     const decoded = jwt.verify(refreshToken, JWT_SECRET_KEY);
     const user = await User.findById(decoded._id);
+    console.log('================리프레시토큰을 통해 찾은 user : ', user);
     if (!user || user.refreshToken !== refreshToken)
       throw new Error('Invalid refresh token');
 
-    // 새 access token 발급
+    // Generate a new access token
     const accessToken = await jwt.sign({ _id: user._id }, JWT_SECRET_KEY, {
-      expiresIn: '10s',
+      expiresIn: '15s',
     });
-    // const accessToken = await user.generateToken();
-    console.log('어세스토큰 다시 발급해주자고 !!!');
+    console.log('==================다시 어세스토큰 줄게 !!!!?');
     res.status(200).json({ accessToken });
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });
@@ -279,17 +279,6 @@ authController.authenticate = async (req, res, next) => {
     res.status(400).json({ status: 'fail', error: error.message });
   }
 };
-
-// authController.authenticate = (req, res, next) => {
-//   const token = req.header('Authorization').replace('Bearer ', '');
-//   try {
-//     const decoded = jwt.verify(token, JWT_SECRET_KEY);
-//     req.userId = decoded._id;
-//     next();
-//   } catch (error) {
-//     res.status(401).json({ status: 'fail', error: 'Unauthorized' });
-//   }
-// };
 
 authController.checkAdminPermission = async (req, res, next) => {
   try {

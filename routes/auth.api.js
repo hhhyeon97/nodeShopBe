@@ -10,4 +10,6 @@ router.post('/kakao', authController.loginWithKakao);
 router.get('/kakao/callback', authController.kakaoCallback);
 router.get('/naver/callback', authController.naverCallback);
 
+router.post('/refresh-token', authController.refreshToken);
+
 module.exports = router;

@@ -18,14 +18,8 @@ authController.loginWithEmail = async (req, res) => {
     if (user) {
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
-        // 기존 코드 access token만 사용
-        //const token = await user.generateToken();
-        //return res.status(200).json({ status: 'success', user, token });
-        // !! 업데이트 -> access and refresh tokens
-        const { accessToken, refreshToken } = await user.generateTokens();
-        return res
-          .status(200)
-          .json({ status: 'success', user, accessToken, refreshToken });
+        const token = await user.generateToken();
+        return res.status(200).json({ status: 'success', user, token });
       }
     }
     throw new Error('이메일 혹은 비밀번호가 잘못되었습니다 !');
@@ -34,29 +28,7 @@ authController.loginWithEmail = async (req, res) => {
   }
 };
 
-// !! 업데이트 : 리프레시 토큰을 사용하여 어세스 토큰을 갱신할 수 있는 엔드포인트 추가
-authController.refreshToken = async (req, res) => {
-  try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) throw new Error('Refresh token is required');
-
-    // Verify the refresh token
-    const decoded = jwt.verify(refreshToken, JWT_SECRET_KEY);
-    const user = await User.findById(decoded._id);
-    console.log('================리프레시토큰을 통해 찾은 user : ', user);
-    if (!user || user.refreshToken !== refreshToken)
-      throw new Error('Invalid refresh token');
-
-    // Generate a new access token
-    const accessToken = await jwt.sign({ _id: user._id }, JWT_SECRET_KEY, {
-      expiresIn: '15s',
-    });
-    console.log('==================다시 어세스토큰 줄게 !!!!?');
-    res.status(200).json({ accessToken });
-  } catch (error) {
-    res.status(400).json({ status: 'fail', error: error.message });
-  }
-};
+// google login
 
 authController.loginWithGoogle = async (req, res) => {
   try {
@@ -249,7 +221,6 @@ authController.naverCallback = async (req, res) => {
   }
 };
 
-/* 기존 코드 
 authController.authenticate = async (req, res, next) => {
   try {
     const tokenString = req.headers.authorization;
@@ -259,21 +230,6 @@ authController.authenticate = async (req, res, next) => {
       if (error) throw new Error('로그인 후 이용가능합니다.');
       req.userId = payload._id;
     });
-    next();
-  } catch (error) {
-    res.status(400).json({ status: 'fail', error: error.message });
-  }
-};
-*/
-
-// !! authenticate 미들웨어를 리프레시 토큰 방식에 맞게 업데이트
-authController.authenticate = async (req, res, next) => {
-  try {
-    const tokenString = req.headers.authorization;
-    if (!tokenString) throw new Error('Token not found');
-    const token = tokenString.replace('Bearer ', '');
-    const payload = jwt.verify(token, JWT_SECRET_KEY);
-    req.userId = payload._id;
     next();
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });

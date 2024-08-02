@@ -22,9 +22,9 @@ app.use(passport.session());
 
 const LOCAL_DB_ADDRESS = process.env.LOCAL_DB_ADDRESS;
 const MONGODB_URI_PROD = process.env.MONGODB_URI_PROD;
-// console.log('mongo-uri', MONGODB_URI_PROD);
+
 mongoose
-  .connect(LOCAL_DB_ADDRESS)
+  .connect(MONGODB_URI_PROD)
   .then(() => console.log('mongoose connected !'))
   .catch((err) => console.log('db connection fail', err));
 

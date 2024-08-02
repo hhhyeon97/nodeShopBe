@@ -32,7 +32,7 @@ userSchema.methods.toJSON = function () {
 
 userSchema.methods.generateAccessToken = async function () {
   const token = await jwt.sign({ _id: this.id }, JWT_SECRET_KEY, {
-    expiresIn: '15s', // 15분
+    expiresIn: '15s', // 테스트 15초
   });
   return token;
 };

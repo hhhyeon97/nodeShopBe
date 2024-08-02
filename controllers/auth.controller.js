@@ -266,6 +266,7 @@ authController.loginWithEmail = async (req, res) => {
 
 authController.refreshToken = async (req, res) => {
   try {
+    console.log('리프레시토큰 검사!!!!!!!!!하러 왔다.');
     const { refreshToken } = req.cookies;
     if (!refreshToken) throw new Error('리프레시 토큰이 없습니다.');
 
@@ -279,7 +280,7 @@ authController.refreshToken = async (req, res) => {
       res.status(200).json({ status: 'success', accessToken: newAccessToken });
     });
   } catch (error) {
-    res.status(400).json({ status: 'fail', error: error.message });
+    res.status(401).json({ status: 'fail', error: error.message });
   }
 };
 

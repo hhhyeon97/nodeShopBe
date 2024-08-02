@@ -5,6 +5,7 @@ const authController = require('../controllers/auth.controller');
 // 회원가입
 router.post('/', userController.createUser);
 
-router.get('/me', authController.authenticate, userController.getUser); // 미들웨어 - > 토큰이 valid한 토큰인지 먼저 체크하고 - >  이 token값을 가지고 유저를 찾아서 리턴
+// router.get('/me', authController.authenticate, userController.getUser); // 미들웨어 - > 토큰이 valid한 토큰인지 먼저 체크하고 - >  이 token값을 가지고 유저를 찾아서 리턴
+router.get('/me', authController.authenticate, userController.getUserInfo);
 
 module.exports = router;

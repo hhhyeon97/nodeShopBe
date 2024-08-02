@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+const JWT_REFRESH_SECRET_KEY = process.env.JWT_REFRESH_SECRET_KEY; // 새로운 시크릿키
 const userSchema = Schema(
   {
     email: { type: String, required: true, unique: true },
@@ -22,9 +23,23 @@ userSchema.methods.toJSON = function () {
   return obj;
 };
 
-userSchema.methods.generateToken = async function () {
+// userSchema.methods.generateToken = async function () {
+//   const token = await jwt.sign({ _id: this.id }, JWT_SECRET_KEY, {
+//     expiresIn: '1d',
+//   });
+//   return token;
+// };
+
+userSchema.methods.generateAccessToken = async function () {
   const token = await jwt.sign({ _id: this.id }, JWT_SECRET_KEY, {
-    expiresIn: '1d',
+    expiresIn: '15s', // 15분
+  });
+  return token;
+};
+
+userSchema.methods.generateRefreshToken = async function () {
+  const token = await jwt.sign({ _id: this.id }, JWT_REFRESH_SECRET_KEY, {
+    expiresIn: '30d', // 30일
   });
   return token;
 };

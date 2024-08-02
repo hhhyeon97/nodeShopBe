@@ -5,28 +5,29 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 const axios = require('axios');
-const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+const { JWT_SECRET_KEY, JWT_REFRESH_SECRET_KEY } = process.env; // 새로운 시크릿키
+// const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const { KAKAO_REST_API_KEY, KAKAO_REDIRECT_URI } = process.env;
 const { NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_REDIRECT_URI } =
   process.env;
 
-authController.loginWithEmail = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    let user = await User.findOne({ email });
-    if (user) {
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (isMatch) {
-        const token = await user.generateToken();
-        return res.status(200).json({ status: 'success', user, token });
-      }
-    }
-    throw new Error('이메일 혹은 비밀번호가 잘못되었습니다 !');
-  } catch (error) {
-    res.status(400).json({ status: 'fail', error: error.message });
-  }
-};
+// authController.loginWithEmail = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+//     let user = await User.findOne({ email });
+//     if (user) {
+//       const isMatch = await bcrypt.compare(password, user.password);
+//       if (isMatch) {
+//         const token = await user.generateToken();
+//         return res.status(200).json({ status: 'success', user, token });
+//       }
+//     }
+//     throw new Error('이메일 혹은 비밀번호가 잘못되었습니다 !');
+//   } catch (error) {
+//     res.status(400).json({ status: 'fail', error: error.message });
+//   }
+// };
 
 // google login
 
@@ -218,6 +219,67 @@ authController.naverCallback = async (req, res) => {
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });
     console.log('에러', error.message);
+  }
+};
+
+// authController.authenticate = async (req, res, next) => {
+//   try {
+//     const tokenString = req.headers.authorization;
+//     if (!tokenString) throw new Error('Token not found');
+//     const token = tokenString.replace('Bearer ', '');
+//     jwt.verify(token, JWT_SECRET_KEY, (error, payload) => {
+//       if (error) throw new Error('로그인 후 이용가능합니다.');
+//       req.userId = payload._id;
+//     });
+//     next();
+//   } catch (error) {
+//     res.status(400).json({ status: 'fail', error: error.message });
+//   }
+// };
+
+authController.loginWithEmail = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    let user = await User.findOne({ email });
+    if (user) {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (isMatch) {
+        const accessToken = await user.generateAccessToken();
+        const refreshToken = await user.generateRefreshToken();
+        console.log('===============리프레시토큰저장하고싶어...');
+        // 리프레시 토큰을 쿠키에 저장
+        res.cookie('refreshToken', refreshToken, {
+          httpOnly: true, // 클라이언트 측에서 쿠키에 접근할 수 없게 설정
+          // secure: process.env.NODE_ENV === 'production', // HTTPS 환경에서만 쿠키를 설정
+          secure: false, // 로컬에서 테스트할 때는 false로 설정
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30일
+        });
+
+        return res.status(200).json({ status: 'success', accessToken, user });
+      }
+    }
+    throw new Error('이메일 혹은 비밀번호가 잘못되었습니다 !');
+  } catch (error) {
+    res.status(400).json({ status: 'fail', error: error.message });
+  }
+};
+
+authController.refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken) throw new Error('리프레시 토큰이 없습니다.');
+
+    jwt.verify(refreshToken, JWT_REFRESH_SECRET_KEY, async (err, payload) => {
+      if (err) throw new Error('리프레시 토큰이 유효하지 않습니다.');
+
+      const user = await User.findById(payload._id);
+      if (!user) throw new Error('사용자를 찾을 수 없습니다.');
+
+      const newAccessToken = await user.generateAccessToken();
+      res.status(200).json({ status: 'success', accessToken: newAccessToken });
+    });
+  } catch (error) {
+    res.status(400).json({ status: 'fail', error: error.message });
   }
 };
 

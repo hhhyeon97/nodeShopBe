@@ -12,4 +12,6 @@ router.get('/naver/callback', authController.naverCallback);
 
 router.post('/refresh-token', authController.refreshToken);
 
+router.post('/auth/logout', authController.logOut);
+
 module.exports = router;

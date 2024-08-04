@@ -275,9 +275,11 @@ authController.refreshToken = async (req, res) => {
 
       const user = await User.findById(payload._id);
       if (!user) throw new Error('사용자를 찾을 수 없습니다.');
-
+      // console.log('찾은 유저 : ', user);
       const newAccessToken = await user.generateAccessToken();
-      res.status(200).json({ status: 'success', accessToken: newAccessToken });
+      res
+        .status(200)
+        .json({ status: 'success', accessToken: newAccessToken, user });
     });
   } catch (error) {
     res.status(401).json({ status: 'fail', error: error.message });

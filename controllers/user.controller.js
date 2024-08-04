@@ -39,15 +39,14 @@ userController.createUser = async (req, res) => {
 //   }
 // };
 
-// 어세스토큰 검증 후 사용자 정보를 반환하는 엔드포인트
 userController.getUserInfo = async (req, res) => {
   try {
     // req.userId는 auth.authenticate에서 설정된 사용자 ID
     const user = await User.findById(req.userId);
-    if (!user)
-      return res.status(404).json({ status: 'fail', error: 'User not found' });
-
-    res.status(200).json({ status: 'success', user });
+    if (user) {
+      console.log('토큰로그인할거야!!!!....', user);
+      res.status(200).json({ status: 'success', user });
+    }
   } catch (error) {
     res.status(500).json({ status: 'fail', error: error.message });
   }

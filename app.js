@@ -7,18 +7,14 @@ const indexRouter = require('./routes/index');
 
 const app = express();
 
-// const passport = require('./config/passport');
-
 require('dotenv').config();
 // app.use(cors());
-
 app.use(
   cors({
     origin: 'http://localhost:3000', // 클라이언트의 도메인
     credentials: true, // 쿠키를 포함할 수 있게 설정
   }),
 );
-
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 

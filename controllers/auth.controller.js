@@ -12,24 +12,7 @@ const { KAKAO_REST_API_KEY, KAKAO_REDIRECT_URI } = process.env;
 const { NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_REDIRECT_URI } =
   process.env;
 
-// authController.loginWithEmail = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-//     let user = await User.findOne({ email });
-//     if (user) {
-//       const isMatch = await bcrypt.compare(password, user.password);
-//       if (isMatch) {
-//         const token = await user.generateToken();
-//         return res.status(200).json({ status: 'success', user, token });
-//       }
-//     }
-//     throw new Error('이메일 혹은 비밀번호가 잘못되었습니다 !');
-//   } catch (error) {
-//     res.status(400).json({ status: 'fail', error: error.message });
-//   }
-// };
-
-// google login
+// google login (+리프레시 토큰)
 
 authController.loginWithGoogle = async (req, res) => {
   try {
@@ -58,8 +41,15 @@ authController.loginWithGoogle = async (req, res) => {
       await user.save();
     }
     // 토큰 발행 리턴
-    const sessionToken = await user.generateToken();
-    res.status(200).json({ status: 'success', user, token: sessionToken });
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      secure: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+    res.status(200).json({ status: 'success', user, token: accessToken });
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });
   }
@@ -105,7 +95,7 @@ authController.loginWithKakao = async (req, res) => {
   }
 };
 
-// kakao rest api
+// kakao rest api (+리프레시 토큰)
 
 authController.kakaoCallback = async (req, res) => {
   const { code } = req.query;
@@ -124,30 +114,23 @@ authController.kakaoCallback = async (req, res) => {
         },
       },
     );
-
-    console.log('Token response:', tokenResponse.data);
-
+    // console.log('Token response:', tokenResponse.data);
     const { access_token } = tokenResponse.data;
-
     const kakaoResponse = await axios.get('https://kapi.kakao.com/v2/user/me', {
       headers: {
         Authorization: `Bearer ${access_token}`,
       },
     });
-
-    console.log('User info response:', kakaoResponse.data);
-
+    // console.log('User info response:', kakaoResponse.data);
     const kakaoProfile = kakaoResponse.data;
     const { kakao_account, properties } = kakaoProfile;
     const email = kakao_account.email;
     const name = properties.nickname;
-
     let user = await User.findOne({ email });
     if (!user) {
       const randomPassword = '' + Math.floor(Math.random() * 1000000);
       const salt = await bcrypt.genSalt(10);
       const newPassword = await bcrypt.hash(randomPassword, salt);
-
       user = new User({
         name,
         email,
@@ -155,8 +138,14 @@ authController.kakaoCallback = async (req, res) => {
       });
       await user.save();
     }
-
-    const localToken = await user.generateToken();
+    const localToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      secure: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
     res.status(200).json({ status: 'success', user, token: localToken });
   } catch (error) {
     console.error('Error during Kakao callback:', error);
@@ -167,7 +156,7 @@ authController.kakaoCallback = async (req, res) => {
   }
 };
 
-// naver rest api
+// naver rest api (+리프레시 토큰)
 
 authController.naverCallback = async (req, res) => {
   const { code, state } = req.query;
@@ -214,7 +203,14 @@ authController.naverCallback = async (req, res) => {
       });
       await user.save();
     }
-    const localToken = await user.generateToken();
+    const localToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      secure: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
     res.status(200).json({ status: 'success', user, token: localToken });
   } catch (error) {
     res.status(400).json({ status: 'fail', error: error.message });
@@ -222,21 +218,7 @@ authController.naverCallback = async (req, res) => {
   }
 };
 
-// authController.authenticate = async (req, res, next) => {
-//   try {
-//     const tokenString = req.headers.authorization;
-//     if (!tokenString) throw new Error('Token not found');
-//     const token = tokenString.replace('Bearer ', '');
-//     jwt.verify(token, JWT_SECRET_KEY, (error, payload) => {
-//       if (error) throw new Error('로그인 후 이용가능합니다.');
-//       req.userId = payload._id;
-//     });
-//     next();
-//   } catch (error) {
-//     res.status(400).json({ status: 'fail', error: error.message });
-//   }
-// };
-
+// 일반 로그인 (+리프레시 토큰)
 authController.loginWithEmail = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -246,16 +228,13 @@ authController.loginWithEmail = async (req, res) => {
       if (isMatch) {
         const accessToken = await user.generateAccessToken();
         const refreshToken = await user.generateRefreshToken();
-        console.log('===============리프레시토큰저장하고싶어...');
         // 리프레시 토큰을 쿠키에 저장
         res.cookie('refreshToken', refreshToken, {
-          // httpOnly: true, // 클라이언트 측에서 쿠키에 접근할 수 없게 설정
-          // secure: process.env.NODE_ENV === 'production', // HTTPS 환경에서만 쿠키를 설정
-          // secure: false, // 로컬에서 테스트할 때는 false로 설정
-          // maxAge: 30 * 24 * 60 * 60 * 1000, // 30일
+          httpOnly: true, // 클라이언트 측에서 쿠키에 접근할 수 없게 설정
+          secure: process.env.NODE_ENV === 'production', // HTTPS 환경에서만 쿠키를 설정
+          secure: true, // 로컬에서 테스트할 때는 false로 설정
           maxAge: 30 * 24 * 60 * 60 * 1000, // 30일
         });
-
         return res.status(200).json({ status: 'success', accessToken, user });
       }
     }
@@ -265,6 +244,7 @@ authController.loginWithEmail = async (req, res) => {
   }
 };
 
+// 리프레시 토큰 검사
 authController.refreshToken = async (req, res) => {
   try {
     console.log('리프레시토큰 검사!!!!!!!!!하러 왔다.');
@@ -284,16 +264,15 @@ authController.refreshToken = async (req, res) => {
     });
   } catch (err) {
     // 리프레시 토큰 오류 발생 시 쿠키에서 삭제
-    // res.cookie('refreshToken', '', {
-    //   expires: new Date(0),
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === 'production', // HTTPS에서만 true
-    //   path: '/', // 쿠키 경로
-    // });
+    res.cookie('refreshToken', '', {
+      expires: new Date(0),
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS에서만 true
+      path: '/', // 쿠키 경로
+    });
     // res.clearCookie('refreshToken');
     // res.clearCookie(key);
-    res.setHeader('refreshToken', 'Max-age=0');
-
+    // res.setHeader('refreshToken', 'Max-age=0');
     res.status(401).json({
       status: 'fail',
       error: err.message,
@@ -309,10 +288,9 @@ authController.logOut = async (req, res) => {
   //   secure: process.env.NODE_ENV === 'production', // 프로덕션 환경에서 HTTPS 사용 시 true
   //   path: '/', // 쿠키 경로
   // });
-  // res.clearCookie('refreshToken');
+  res.clearCookie('refreshToken');
   // res.clearCookie(key);
   // res.setHeader('refreshToken', 'Max-age=0');
-
   res.status(200).json({ message: 'Logged out' });
 };
 

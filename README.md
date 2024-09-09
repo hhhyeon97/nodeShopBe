@@ -2,8 +2,8 @@
 
 ![image](https://github.com/user-attachments/assets/70af4abd-c397-44bd-8c61-7c9364821a8a)
 
-
-Fuzzy는 MERN 스택을 기반으로 한 풀스택 쇼핑몰 프로젝트입니다. <br>
+- 1인 프로젝트
+- Fuzzy는 MERN 스택을 기반으로 한 풀스택 쇼핑몰 프로젝트입니다. <br>
 고객에게 쉽고 빠른 쇼핑 경험을 제공하며, <br>
 어드민 기능을 통해 효율적으로 상품과 주문을 관리할 수 있습니다.
 
